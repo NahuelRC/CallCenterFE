@@ -1,4 +1,7 @@
-const API = process.env.NEXT_PUBLIC_API_URL!;
+// lib/api.ts
+// 👉 Con rewrite, usamos mismo origen (ruta relativa).
+//    Si querés forzar una base distinta, seteá NEXT_PUBLIC_API_BASE.
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? '';
 
 export type PromptBE = {
   _id: string;
@@ -8,40 +11,60 @@ export type PromptBE = {
   creadoEn?: string;
 };
 
+async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) },
+    cache: 'no-store',
+    ...init,
+  });
+
+  if (!res.ok) {
+    let msg = `HTTP ${res.status}`;
+    try {
+      const j = await res.json();
+      if (j?.error) msg = j.error;
+    } catch {
+      // respuesta no-JSON
+    }
+    throw new Error(msg);
+  }
+  return res.json() as Promise<T>;
+}
+
+// GET /api/prompts
 export async function listPrompts(): Promise<PromptBE[]> {
-  const r = await fetch(`${API}/api/prompts`, { cache: 'no-store' });
-  if (!r.ok) throw new Error('Error listando prompts');
-  return r.json();
+  return apiFetch<PromptBE[]>('/api/prompts');
 }
 
+// POST /api/prompts
 export async function createPrompt(body: { nombre: string; content: string; activo?: boolean }) {
-  const r = await fetch(`${API}/api/prompts`, {
+  return apiFetch<PromptBE>('/api/prompts', {
     method: 'POST',
-    headers: { 'Content-Type':'application/json' },
     body: JSON.stringify(body),
   });
-  if (!r.ok) throw new Error('Error creando prompt');
-  return r.json();
 }
 
-export async function updatePrompt(id: string, body: Partial<{ nombre: string; content: string; activo: boolean }>) {
-  const r = await fetch(`${API}/api/prompts/${id}`, {
+// PUT /api/prompts/:id
+export async function updatePrompt(
+  id: string,
+  body: Partial<{ nombre: string; content: string; activo: boolean }>
+) {
+  return apiFetch<PromptBE>(`/api/prompts/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type':'application/json' },
     body: JSON.stringify(body),
   });
-  if (!r.ok) throw new Error('Error actualizando prompt');
-  return r.json();
 }
 
+// PATCH /api/prompts/activar/:id
 export async function activatePrompt(id: string) {
-  const r = await fetch(`${API}/api/prompts/activar/${id}`, { method: 'PATCH' });
-  if (!r.ok) throw new Error('Error activando prompt');
-  return r.json();
+  return apiFetch<{ message: string; prompt: PromptBE }>(`/api/prompts/activar/${id}`, {
+    method: 'PATCH',
+  });
 }
 
+// DELETE /api/prompts/:id
 export async function deletePrompt(id: string) {
-  const r = await fetch(`${API}/api/prompts/${id}`, { method: "DELETE" });
-  if (!r.ok) throw new Error("Error eliminando prompt");
-  return r.json();
+  return apiFetch<{ ok: true }>(`/api/prompts/${id}`, {
+    method: 'DELETE',
+  });
 }
