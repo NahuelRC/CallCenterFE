@@ -8,9 +8,10 @@ interface SidebarProps {
 
 export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
   const menuItems = [
-    //{ icon: Home, label: "Dashboard", page: "dashboard" },
+    { icon: Home, label: "Dashboard", page: "dashboard" },
    // { icon: ShoppingCart, label: "Ventas", page: "ventas" },
-    //{ icon: Users, label: "Clientes", page: "clientes" },
+    { icon: Users, label: "Clientes", page: "clientes" },
+    { icon: Users, label: "Conversaciones", page: "conversaciones" },
     //{ icon: Package, label: "Productos", page: "productos" },
     { icon: Bot, label: "Agente IA", page: "agente-ia" },
     { icon: Settings, label: "Configuración", page: "configuracion" },

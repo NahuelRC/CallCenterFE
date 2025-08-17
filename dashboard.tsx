@@ -8,6 +8,7 @@ import { AIAgentStatus } from "./components/ai-agent-status"
 import { AgenteIAPage } from "./components/agente-ia-page"
 import { ConfiguracionPage } from "./components/configuracion-page"
 import { ClientesPage } from "./components/clientes-page"
+import { ConversacionesPage } from "./components/conversaciones-page"
 import { DollarSign, Users, Package, Target } from "lucide-react"
 
 export default function Dashboard() {
@@ -19,6 +20,8 @@ export default function Dashboard() {
         return <AgenteIAPage />
       case "configuracion":
         return <ConfiguracionPage />
+      case "conversaciones":
+        return <ConversacionesPage />
       case "clientes":
         return <ClientesPage />
       case "dashboard":
