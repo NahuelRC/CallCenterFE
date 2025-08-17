@@ -46,6 +46,14 @@ export async function toggleAgent(contactId: string, enabled: boolean) {
   });
 }
 
+export async function setAgentEnabledByPhone(phone: string, enabled: boolean) {
+  const safePhone = encodeURIComponent(phone);
+  const path = enabled
+    ? `/api/conversations/${safePhone}/activate`
+    : `/api/conversations/${safePhone}/deactivate`;
+  return api<{ ok: true; status: string }>(path, { method: "PATCH" });
+}
+
 // Enviar OUTBOUND por phone
 export async function sendOutboundByPhone(phone: string, body: string) {
   return api<{ ok: true; sid: string; status: string }>("/api/contacts/send", {

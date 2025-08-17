@@ -1,16 +1,19 @@
 // lib/messagesApi.ts
+
 export type ConversationRow = {
-  phone: string;                 // "+549..."
-  messagesCount: number;         // total mensajes (inbound)
-  lastMessageAt: string;         // ISO date
-  lastMessage?: { mensaje: string; timestamp: string };
+  from: string;                 // "whatsapp:+549..."
+  phone: string;                // "+549..."
+  status: string;               // "active" | "blocked" | ...
+  conversationsCount: number;   // total de mensajes (conteo)
+  lastActivityAt: string;       // ISO date
 };
 
 export type HistoryMessage = {
-  _id: string;
-  from: string;                  // "whatsapp:+549..." del remitente
-  mensaje: string;
-  timestamp: string;
+  id: string;
+  from: string;                 // "whatsapp:+549..."
+  phone: string;                // "+549..."
+  body: string;                 // texto del mensaje
+  timestamp: string;            // ISO date
 };
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
@@ -26,22 +29,63 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
     } catch {}
     throw new Error(msg);
   }
-  return r.json();
+  return r.json() as Promise<T>;
 }
 
-// Lista conversaciones agregadas desde Messages
-export async function listConversations(params?: { page?: number; limit?: number }) {
+/**
+ * GET /api/conversations
+ * Query opcionales: search, limit, offset
+ * Devuelve: ConversationRow[]
+ */
+export async function listConversations(params?: {
+  search?: string;
+  limit?: number;
+  offset?: number;
+}) {
   const q = new URLSearchParams();
-  if (params?.page) q.set("page", String(params.page));
-  if (params?.limit) q.set("limit", String(params.limit));
+  if (params?.search) q.set("search", params.search);
+  if (params?.limit != null) q.set("limit", String(params.limit));
+  if (params?.offset != null) q.set("offset", String(params.offset));
   const qs = q.toString() ? `?${q.toString()}` : "";
-  return api<{ items: ConversationRow[]; page: number; pages: number; total: number }>(
-    `/api/messages/conversations${qs}`
+  return api<ConversationRow[]>(`/api/conversations${qs}`);
+}
+
+/**
+ * GET /api/conversations/:phone/messages
+ * Query opcionales: limit, before, after
+ * Devuelve: HistoryMessage[]
+ */
+export async function getHistory(
+  phone: string,
+  params?: { limit?: number; before?: string; after?: string }
+) {
+  const q = new URLSearchParams();
+  if (params?.limit != null) q.set("limit", String(params.limit));
+  if (params?.before) q.set("before", params.before);
+  if (params?.after) q.set("after", params.after);
+  const qs = q.toString() ? `?${q.toString()}` : "";
+  const safePhone = encodeURIComponent(phone);
+  return api<HistoryMessage[]>(`/api/conversations/${safePhone}/messages${qs}`);
+}
+
+/**
+ * PATCH /api/conversations/:phone/deactivate
+ */
+export async function deactivateAgentByPhone(phone: string) {
+  const safePhone = encodeURIComponent(phone);
+  return api<{ ok: true; status: string }>(
+    `/api/conversations/${safePhone}/deactivate`,
+    { method: "PATCH" }
   );
 }
 
-// Historial por teléfono
-export async function getHistory(phone: string) {
-  const qs = `?phone=${encodeURIComponent(phone)}`;
-  return api<{ items: HistoryMessage[] }>(`/api/messages/history${qs}`);
+/**
+ * PATCH /api/conversations/:phone/activate
+ */
+export async function activateAgentByPhone(phone: string) {
+  const safePhone = encodeURIComponent(phone);
+  return api<{ ok: true; status: string }>(
+    `/api/conversations/${safePhone}/activate`,
+    { method: "PATCH" }
+  );
 }

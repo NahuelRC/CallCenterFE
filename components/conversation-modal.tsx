@@ -24,8 +24,17 @@ export function ConversationModal({ open, phone, onClose }: Props) {
     const run = async () => {
       try {
         setLoading(true);
-        const res = await getHistory(phone);
-        setItems(res.items);
+       const res = await getHistory(phone);
+setItems(
+  // si tu BE nuevo devuelve array con { id, from, phone, body, timestamp }:
+  res.map((m) => ({
+    _id: m.id,
+    from: m.from,
+    mensaje: m.body,
+    timestamp: m.timestamp,
+  }))
+);
+
       } catch (e) {
         console.error(e);
       } finally {
