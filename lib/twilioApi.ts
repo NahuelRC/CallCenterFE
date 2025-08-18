@@ -1,15 +1,15 @@
 // lib/twilioApi.ts
 export type TwilioConfigDTO = {
   accountSid?: string;
-  authTokenMasked?: string; // el BE devuelve el token enmascarado
-  fromNumber?: string;      // ej: "whatsapp:+549341..."
+  authTokenMasked?: string;
+  fromNumber?: string;
   webhookUrl?: string;
 };
 
 type SaveBody = {
   accountSid: string;
-  authToken: string;   // en claro SOLO al guardar
-  fromNumber: string;  // preferible con prefijo "whatsapp:+..."
+  authToken: string;
+  fromNumber: string;
   webhookUrl?: string;
 };
 
@@ -19,15 +19,11 @@ type TestResponse = {
   error?: string;
 };
 
-// Usa NEXT_PUBLIC_API_URL si existe; si no, intenta el mismo origen (útil en dev con proxy)
-const API =
-  process.env.NEXT_PUBLIC_API_URL ??
-  (typeof window !== "undefined" ? window.location.origin : "");
-
-// Helper fetch con manejo de errores
+// Helper fetch con manejo de errores (SIN dominio absoluto)
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API}${path}`, {
-    headers: { "Content-Type": "application/json", ...(init?.headers || {}) },
+  const url = path.startsWith('/') ? path : `/${path}`;
+  const res = await fetch(url, {
+    headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) },
     ...init,
   });
   if (!res.ok) {
@@ -41,23 +37,20 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-// GET /api/twilio/config
 export async function getTwilioConfig(): Promise<TwilioConfigDTO> {
-  return apiFetch<TwilioConfigDTO>("/api/twilio/config", { cache: "no-store" });
+  return apiFetch<TwilioConfigDTO>('/api/twilio/config', { cache: 'no-store' });
 }
 
-// PUT /api/twilio/config
-export async function saveTwilioConfig(body: SaveBody): Promise<{ ok: true }> {
-  return apiFetch<{ ok: true }>("/api/twilio/config", {
-    method: "PUT",
+export async function saveTwilioConfig(body: SaveBody): Promise<{ ok: true; updatedAt?: string }> {
+  return apiFetch<{ ok: true; updatedAt?: string }>('/api/twilio/config', {
+    method: 'PUT',
     body: JSON.stringify(body),
   });
 }
 
-// POST /api/twilio/test   (opcionalmente con { to: "+549..." })
-export async function testTwilioConnection(to?: string) {
-  return apiFetch<TestResponse>("/api/twilio/test", {
-    method: "POST",
-    body: JSON.stringify({ testTo: to }), // ✅ coincide con BE
+export async function testTwilioConnection(to?: string): Promise<TestResponse> {
+  return apiFetch<TestResponse>('/api/twilio/test', {
+    method: 'POST',
+    body: JSON.stringify({ testTo: to }),
   });
 }
